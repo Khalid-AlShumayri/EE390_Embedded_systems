@@ -1,0 +1,228 @@
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 1
+
+
+
+
+
+       MCS-51 Family Macro Assembler   A S E M - 5 1   V 1.3
+       =====================================================
+
+
+
+	Source File:	B:\KFUPM_ALL\Semster_213\EE390_Digital_Systems_Engineering\LAB\Summer_Projects\Code.asm
+	Object File:	B:\KFUPM_ALL\Semster_213\EE390_Digital_Systems_Engineering\LAB\Summer_Projects\Code.hex
+	List File:	B:\KFUPM_ALL\Semster_213\EE390_Digital_Systems_Engineering\LAB\Summer_Projects\Code.lst
+
+
+
+ Line  I  Addr  Code            Source
+
+    1:		N      0000		ORG 00H
+    2:	  0000	02 00 49		LJMP MAIN
+    3:
+    4:		N      0020		ORG 20H
+    5:	  0020	2D 04 00 08		MATRIXS: DB 45, 4, 0, 8, 11, 29, 9, 5, 6
+	  0024	0B 1D 09 05
+	  0028	06
+    6:		N      0030		ORG 30H
+    7:	  0030	1E 5F 19 32		MATRIXG: DB 30 , 95 , 25 , 50 , 15 , 20 , 5 , 15 , 45
+	  0034	0F 14 05 0F
+	  0038	2D
+    8:		N      0040		ORG 40H
+    9:	  0040	28 50 19 0F	 	MATRIXL: DB 40 , 80 , 25 , 15 , 30 , 20 , 9 , 5 , 35
+	  0044	1E 14 09 05
+	  0048	23
+   10:
+   11:	  0049			MAIN:
+   12:
+   13:	  0049			OUTPWR:
+   14:	  0049	75 43 09		MOV 43H,#09D	;COUNTER
+   15:	  004C	90 00 20		MOV DPTR,#0020H	;READING DATA FROM THE ROM
+   16:	  004F	78 50			MOV R0,#50H	;SAVING LOCATION
+   17:		N      0005	CI	EQU 05D
+   18:		N      000B	RT	EQU 11D
+   19:		N      0019	CO	EQU 25D
+   20:		N      0032	PR	EQU 50D
+   21:	  0051	74 0B			MOV A,#RT
+   22:	  0053	94 05			SUBB A,#CI
+   23:	  0055	F5 40			MOV 40H,A
+   24:		N      0040	DEN	EQU 40H
+   25:
+   26:	  0057			HERE:
+   27:	  0057	E4			CLR A
+   28:	  0058	C3			CLR C
+   29:	  0059	93			MOVC A,@A+DPTR
+   30:	  005A	B4 05 02		CJNE A,#CI,N1	;CONDITION 1
+   31:	  005D	80 07			SJMP N2
+   32:	  005F	50 05		N1:	JNC N2
+   33:	  0061	75 41 00	ZERO:	MOV 41H,#00H	;41H is the address of the output
+   34:	  0064	80 35			SJMP THERE
+   35:	  0066			N2:
+   36:	  0066	B4 0B 02		CJNE A,#RT,N3	;CONDITION 2
+   37:	  0069	80 26			SJMP N4
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
+
+
+
+ Line  I  Addr  Code            Source
+
+   38:	  006B	50 24		N3:	JNC N4
+   39:				;------ Second equation --------
+   40:	  006D	C3			CLR C
+   41:	  006E	94 05			SUBB A,#CI	;Vci < A < Vrt
+   42:	  0070	75 F0 32		MOV B,#PR	;5 < A < 11
+   43:	  0073	A4			MUL AB		;Multiplication: (A-5)*P_rated
+   44:	  0074	AA F0			MOV R2,B
+   45:	  0076	FB			MOV R3,A
+   46:	  0077	75 F0 40		MOV B,#DEN
+   47:	  007A	84			DIV AB
+   48:	  007B	AC F0			MOV R4,B	;Remainder 1
+   49:	  007D	FD			MOV R5,A	;Qut 2
+   50:	  007E	EA			MOV A,R2	;Higher byte of the multiplication
+   51:	  007F	75 F0 40		MOV B,#DEN
+   52:	  0082	84			DIV AB		;divide higher byte by DEN
+   53:	  0083	2D			ADD A,R5	;Add the Qut
+   54:	  0084	FB			MOV R3,A	;Save the sum of Qut
+   55:	  0085	E5 F0			MOV A,B		;Remainder 2
+   56:	  0087	2C			ADD A,R4	;Sum of the remainders
+   57:	  0088	75 F0 40		MOV B,#DEN	;
+   58:	  008B	84			DIV AB		;Divide the sum of remainders by DEN
+   59:	  008C	2B			ADD A,R3	;(A-5)*P_rated/(11-5)
+   60:	  008D	F5 41			MOV 41H,A
+   61:	  008F	80 0A			SJMP THERE
+   62:				;-----------------------------
+   63:	  0091			N4:
+   64:	  0091	B4 19 02		CJNE A,#CO,N5
+   65:	  0094	80 CB			SJMP ZERO
+   66:	  0096	50 C9		N5:	JNC ZERO
+   67:	  0098	75 41 32		MOV 41H,#PR
+   68:
+   69:	  009B	A6 41		THERE:	MOV @R0,41H
+   70:	  009D	08			INC R0
+   71:	  009E	A3			INC DPTR
+   72:	  009F	D5 43 B5		DJNZ 43H,HERE	;Decrement the counter
+   73:
+   74:
+   75:					END
+
+
+
+
+
+                     register banks used:  ---
+
+                     no errors
+
+
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
+
+
+
+
+
+	       L I S T   O F   S Y M B O L S
+	       =============================
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+??ASEM_51			  NUMBER    8051
+??VERSION			  NUMBER    0130
+AC				  BIT	      D6
+ACC				  DATA	      E0
+B				  DATA	      F0
+CI				  NUMBER    0005	  17
+CO				  NUMBER    0019	  19
+CY				  BIT	      D7
+DEN				  NUMBER    0040	  24
+DPH				  DATA	      83
+DPL				  DATA	      82
+EA				  BIT	      AF
+ES				  BIT	      AC
+ET0				  BIT	      A9
+ET1				  BIT	      AB
+EX0				  BIT	      A8
+EX1				  BIT	      AA
+EXTI0				  CODE	    0003
+EXTI1				  CODE	    0013
+F0				  BIT	      D5
+HERE				  CODE	    0057	  26
+IE				  DATA	      A8
+IE0				  BIT	      89
+IE1				  BIT	      8B
+INT0				  BIT	      B2
+INT1				  BIT	      B3
+IP				  DATA	      B8
+IT0				  BIT	      88
+IT1				  BIT	      8A
+MAIN				  CODE	    0049	  11
+MATRIXG				  CODE	    0030	   7
+MATRIXL				  CODE	    0040	   9
+MATRIXS				  CODE	    0020	   5
+N1				  CODE	    005F	  32
+N2				  CODE	    0066	  35
+N3				  CODE	    006B	  38
+N4				  CODE	    0091	  63
+N5				  CODE	    0096	  66
+OUTPWR				  CODE	    0049	  13
+OV				  BIT	      D2
+P				  BIT	      D0
+P0				  DATA	      80
+P1				  DATA	      90
+P2				  DATA	      A0
+P3				  DATA	      B0
+PCON				  DATA	      87
+PR				  NUMBER    0032	  20
+PS				  BIT	      BC
+PSW				  DATA	      D0
+PT0				  BIT	      B9
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
+
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+PT1				  BIT	      BB
+PX0				  BIT	      B8
+PX1				  BIT	      BA
+RB8				  BIT	      9A
+RD				  BIT	      B7
+REN				  BIT	      9C
+RESET				  CODE	    0000
+RI				  BIT	      98
+RS0				  BIT	      D3
+RS1				  BIT	      D4
+RT				  NUMBER    000B	  18
+RXD				  BIT	      B0
+SBUF				  DATA	      99
+SCON				  DATA	      98
+SINT				  CODE	    0023
+SM0				  BIT	      9F
+SM1				  BIT	      9E
+SM2				  BIT	      9D
+SP				  DATA	      81
+T0				  BIT	      B4
+T1				  BIT	      B5
+TB8				  BIT	      9B
+TCON				  DATA	      88
+TF0				  BIT	      8D
+TF1				  BIT	      8F
+TH0				  DATA	      8C
+TH1				  DATA	      8D
+THERE				  CODE	    009B	  69
+TI				  BIT	      99
+TIMER0				  CODE	    000B
+TIMER1				  CODE	    001B
+TL0				  DATA	      8A
+TL1				  DATA	      8B
+TMOD				  DATA	      89
+TR0				  BIT	      8C
+TR1				  BIT	      8E
+TXD				  BIT	      B1
+WR				  BIT	      B6
+ZERO				  CODE	    0061	  33
