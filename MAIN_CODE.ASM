@@ -11,16 +11,20 @@
 	ORG 0200H
 MAIN:	
 ;========================== Part 1 =============================
+; Transferring the data from ROM to xRAM
+
+LENGTH	EQU  09D	;length of the data
+
 TRANSFER:	
 		
-	MOV R1,#20H
+	MOV R1,#20H	;S
 	MOV R2,#00H
-	MOV R3,#30H
+	MOV R3,#30H	;G
 	MOV R4,#10H
-	MOV R5,#40H
+	MOV R5,#40H	;L
 	MOV R6,#20H
 
-	MOV R7,#09
+	MOV R7,#LENGTH
 	MOV DPH,#00H
 	
 	TRNS:	CLR A
@@ -54,33 +58,32 @@ TRANSFER:
 ;========================== Part 2 =============================	
 OUTPWR:
 	MOV 2FH,#09D	;Length of the vector.  
-	MOV DPTR,#0020H	;Reading data from the ROM
-	
+	MOV DPTR,#0000H	;Reading data from the xRAM 
+
 ;------- Parameter of the program ----------------
 	
-	MOV 30H,#05D	;cut_in
-	MOV 31H,#11D	;rated
-	MOV 32H,#25D	;cut_out
-	MOV 33H,#50D	;rated power
-	MOV 34H,#20H	;Reading from the ROM
-	MOV R0 ,#50H	;Saving location
-	
-	;41H is the address of the output
-	
+	CUT_IN	EQU	05D	;cut_in voltage
+	R_SPEED	EQU	11D	;rated turbine speed
+	CUT_OUT	EQU	25D	;cut_out voltage
+	R_POWER EQU	50D	;rated power
+		
 ;------------------------------------------------
+	
+	MOV 30H,#CUT_IN	
+	MOV 31H,#R_SPEED	
+	MOV 32H,#CUT_OUT	
+	MOV 33H,#R_POWER	
+	MOV 34H,#00H	;Reading S from the xRAM
+	MOV R0 ,#50H	;Saving address in the xRAM
 	
 	MOV  A,31H
 	SUBB A,30H
-	MOV 36H,A	;DEN. for part 3	
+	MOV 36H,A	;DEN. for part 4	
 	
 HERE:	
 	CLR A
 	CLR C
-	MOVC A,@A+DPTR	
-	
-	
-	
-	
+	MOVX A,@DPTR	
 	
 	CJNE A,30H,N1	;Condition 1
 	SJMP N2
@@ -92,14 +95,15 @@ HERE:
 		CJNE A,31H,N3	;Condition 2
 		SJMP N4
 	N3:	JNC N4
-;-------- SECOND EQUATION 
+;-------- Second equation 
 
 		CLR C	
 		SUBB A,30H	;Vci < A < Vrt ==> 5 < A < 11
 		MOV B,33H	;Rated Power
 		MOV R1,36H	;DEN
 	;the above 3 lines are the args.
-	;for the function MULT
+	;for the function MULTDIV
+	
 		ACALL MULTDIV	;Calling the MULT subroutine
 		MOV 37H,A	;(A-5)*P_rated/(11-5)=A*B/R1
 		SJMP THERE
@@ -110,13 +114,13 @@ HERE:
 					
 	N5:	JNC ZERO
 	
-;-------- Third equation 
+;---------- Third equation 
 		MOV 37H,33H	;output = P_rated
 				
 	THERE:	MOV @R0,37H	;Storing the result to the RAM
 		MOV DPL,R0
 		MOV A,37H
-		MOVX @DPTR,A
+		MOVX @DPTR,A	;Saving the output to xRAM
 		INC R0
 		INC 34H
 		MOV DPL,34H
@@ -126,23 +130,24 @@ HERE:
 	
 ;=========================== Part 3: LOLE ============================
 
-;This program keep track of how many times
+;This part keep track of how many times
 ;the demand power outstriped generation
+
 LOLE:		
 	MOV R7,#09D
-	MOV R2,#30H	;GEN. PWR.
-	MOV R3,#40H	;DEM. PWR.
+	MOV R2,#10H	;GEN. PWR.
+	MOV R3,#20H	;DEM. PWR.
 	MOV DPH,#00H
 	MOV R6,#00H	;Counter to count how many times the demand outstriped generation
 	
 	BACK3:	
 		MOV DPL,R2
 		CLR A
-		MOVC A,@A+DPTR	;Retrieving data from ROM
+		MOVX A,@DPTR	;Retrieving data from ROM
 		MOV R4,A	;Storing GEN. PWR. to R4
 		CLR A		
 		MOV DPL,R3
-		MOVC A,@A+DPTR	;Retrieving data from ROM
+		MOVX A,@DPTR	;Retrieving data from ROM
 		CJNE A,04H,L3	;Comparing the GEN. PWR. to demanded power
 			SJMP EXIT3
 			
@@ -166,7 +171,7 @@ LOLP:
 	MOV DPTR,#0060H
 	MOVX A,@DPTR	;loading the LOLE value to register A
 	MOV DPTR,#PERCEN
-	MOVC A,@A+DPTR	;
+	MOVC A,@A+DPTR	;Percentage value look-up table
 	MOV 70H,A
 	MOV DPTR,#0070H
 	MOVX @DPTR,A	;Storing the result to xRAM
@@ -175,14 +180,17 @@ LOLP:
 
 ;This program calculate the total energy served for all instances
 
-;	R1 = ACC. LOWER BYTE
-;	R2 = ACC. HIGHER BYTE
+;R1 = ACC. LOWER BYTE
+;R2 = ACC. HIGHER BYTE
 
+L_BYTE5	EQU 0080H
+H_BYTE5	EQU 0081H
+	
 ESERV:		
 	
 	MOV R7,#09D
-	MOV R2,#30H	;GEN. PWR.
-	MOV R3,#40H	;DEM. PWR.
+	MOV R2,#10H	;GEN. PWR.
+	MOV R3,#20H	;DEM. PWR.
 	MOV DPH,#00H
 	MOV R0,#00H	;HIGHER BYTE
 	MOV R1,#00H	;LOWER BYTE
@@ -190,11 +198,11 @@ ESERV:
 	BACK5:	
 		MOV DPL,R2
 		CLR A
-		MOVC A,@A+DPTR	;Retrieving data from ROM
+		MOVX A,@DPTR	;Retrieving data from ROM
 		MOV R6,A	;Storing GEN. PWR. to R6
 		CLR A		
 		MOV DPL,R3
-		MOVC A,@A+DPTR	;Reading the DEM. PWR. to A
+		MOVX A,@DPTR	;Reading the DEM. PWR. to A
 		CJNE A,06H,L5	;Comparing the A=DEM. with R6=GEN.
 		
 			MOV R6,A
@@ -216,21 +224,25 @@ ESERV:
 			INC R3
 			DJNZ R7,BACK5
 	
-	MOV DPTR,#0080H	
+	MOV DPTR,#L_BYTE5
 	MOV A,R1	
-	MOVX @DPTR,A	;LOWER BYTE
-	MOV 80H,A	;Storing the result to RAM
-	MOV DPTR,#0081H
+	MOVX @DPTR,A	;Lower byte stored in xRAM address 0080
+	MOV DPTR,#H_BYTE5
 	MOV A,R0
-	MOVX @DPTR,A	;HIGHER BYTE
-	MOV 81H,A	;Storing the result to RAM
+	MOVX @DPTR,A	;Higher byte stored in xRAM address 0081
 	
 ;====================== Part 6 =======================	
+
+;R1 = ACC. LOWER BYTE
+;R2 = ACC. HIGHER BYTE
+L_BYTE6	EQU 0091H
+H_BYTE6	EQU 0090H
+
 ENSERV:	
 		
 	MOV R7,#09D
-	MOV R2,#30H	;GEN. PWR.
-	MOV R3,#40H	;DEM. PWR.
+	MOV R2,#10H	;GEN. PWR. address
+	MOV R3,#20H	;DEM. PWR. address
 	MOV DPH,#00H
 	MOV R1,#00H	
 	MOV R0,#00H
@@ -238,13 +250,14 @@ ENSERV:
 	BACK6:	
 		MOV DPL,R2
 		CLR A
-		MOVC A,@A+DPTR	;Retrieving data from ROM
+		MOVX A,@DPTR	;Retrieving data from xRAM
 		MOV R6,A	;Storing GEN. PWR. to R4
 		CLR A		
 		MOV DPL,R3
-		MOVC A,@A+DPTR	;Retrieving data from ROM
+		MOVX A,@DPTR	;Retrieving data from xRAM
 		CJNE A,06H,L6	;Comparing
 		;Comparing the GEN. PWR. to demanded power
+		
 			SJMP EXIT6
 			
 		L6:	JC EXIT6
@@ -261,39 +274,22 @@ ENSERV:
 			INC R3
 			DJNZ R7,BACK6
 	
-	MOV DPTR,#0091H
+	MOV DPTR,#L_BYTE6
 	MOV A,R1	;LOWER BYTE
 	MOVX @DPTR,A	;Storing the result to xRAM
-	MOV 91H,A	;Storing the result to RAM
-	MOV DPTR,#0092H
+	MOV DPTR,#H_BYTE6
 	MOV A,R0	;HIGHER BYTE
 	MOVX @DPTR,A	;Storing the result to xRAM
-	MOV 92H,A	;Storing the result to RAM
 	
+	SJMP $
 ;==========================================================================================
 ;=============================== END OF THE PROGRAM =======================================
 ;==========================================================================================
 
 	ORG 0080H
-;--------------------- ADD16: 16-BIT ----------------------------
-; A&B 8-BIT NUMBERS TO BE ADDED 
-; R1 SUMMATION OF THE LOWER BYTE
-; R0 HIGHER BYTE OF THE RESULT
-
-ADD16:	
-	ADD A,B
-	MOV B,R0
-	JNC CONT1
-		INC B
-CONT1:	ADD A,R1
-	JNC CONT2
-		INC B
-CONT2:				
-	RET
 	
 ;--------------------- MULTDIV Subroutine -----------------------
-
-
+;16-BIT DIVISION
 ;This subroutine takes input A, B, DEN
 ;mutiply A&B then stores the result in two bytes
 ;after that it divides this 16-bit number by DEN
@@ -319,7 +315,7 @@ MULTDIV:
 	ADD A,R3	;
 	RET		
 	
-;---------- Percentage look-up table for part 3 ------------	
+;---------- Percentage look-up table for part 4 ------------	
 PERCEN:		
 	DB 0,11,22,33,44,56,67,78,89,100
 	
