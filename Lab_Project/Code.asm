@@ -2,11 +2,11 @@ ORG 00H
 	LJMP MAIN	
 		
 	ORG 20H
-	MATRIXS: DB 45, 4, 0, 8, 11, 29, 9, 5, 6
+	MATRIXS: DB 45, 4, 0, 8, 11, 29, 9, 5, 6		; Speed of the turbine
 	ORG 30H 
-	MATRIXG: DB 30 , 95 , 25 , 50 , 15 , 20 , 5 , 15 , 45 
+	MATRIXG: DB 30 , 95 , 25 , 50 , 15 , 20 , 5 , 15 , 45 	; Generation 
 	ORG 40H
- 	MATRIXL: DB 40 , 80 , 25 , 15 , 30 , 20 , 9 , 5 , 35 
+ 	MATRIXL: DB 40 , 80 , 25 , 15 , 30 , 20 , 9 , 5 , 35 	; Load demand
 	
 	ORG 0200H
 MAIN:	
